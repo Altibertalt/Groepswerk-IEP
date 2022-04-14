@@ -25,11 +25,11 @@ def message(message_text = "", response_key = "space", duration = 0, height = No
         event.waitKeys(keyList = response_key)
     else:
         core.wait(duration)
-##initialize message text
+##initilize message text
 
 welcome_text = "Welcome to the experiment. Press the spacebar to continue"
-practice_text = "We will start with a practice phase. You will be presented with a sequence of letters. Then, you are supposed to repeat the sequence you just saw. Use the keyboard for your response and press enter when you finished typing your answer. Press space to start the practice phase"
-experiment_text = "Now the real experiment will start. The sequences that are presented are generated following a specific rule. This time you are supposed to indicate for each sequence whether it is generated based on the same rule as the training set (press f) or based on another rule (press j). Press space to start the experiment."
+practice_text = "We will start with a practice phase. You will be presented with a sequence of letters. You are than supposed to repeat the sequnce you just saw. Use the keyboard for your response and press enter when you finished typing your answer. Press space to start the practice phase"
+experiment_text = "Now the real experiment will start. The sequences you will ee get generated following a specific rule. This time you are supposed to indicate for each sequence whether it is generated based on the same rule as the training set (press f) or based on another rule (press j). Press space to start the experiment."
 goodbye_text = "Thank you for participating! Press space to leave the experiment."
 correct_text = "Correct answer!"
 wrong_text  = "Wrong answer!"
@@ -51,15 +51,6 @@ cor_resp = numpy.repeat(response,len(experiment_stimuli)/2)
 accuracy_response = numpy.repeat(accuracy, len(experiment_stimuli))
 experiment_array = numpy.column_stack([experiment_stimuli, rule_stimuli, cor_resp, accuracy_response])
 
-##welcome participant
-
-##make empty array to fill with randomized sequence, error: could not convert string to float
-
-#trials = numpy.ones((n_experiment_stimuli, 4)) * numpy.nan
-#numpy.random.shuffle(experiment_array)
-#current_trials = numpy.array(range(n_experiment_stimuli))
-#trials[current_trials, 0:4] = experiment_array
-#print(trials)
 
 ##same with data frame
 
@@ -79,14 +70,14 @@ message(message_text = welcome_text)
 ##present practice block
 
 answer = []
-for j in range(1):
-    practice_stimuli_shuffled = random.sample(practice_stimuli, 1)
-    message(message_text = "This is the beginning of practice block {}.".format(j+1), duration = 2)
-    for i in range(len(practice_stimuli_shuffled)):
+for j in range(2):
+    numpy.random.shuffle(practice_stimuli)
+    message(message_text = "This is the beginning of the practice block {}. Press the spacebar to start.".format(j+1))
+    for i in range(n_practice_stimuli):
         correct = False
         while correct == False: 
             answer.clear()
-            message(message_text = practice_stimuli_shuffled[i], duration = 2)
+            message(message_text = practice_stimuli[i], duration = 2)
             message(message_text = "if you are ready to type your answer press space. Press return to submit your answer.", response_key = "space")
             event.clearEvents()
             while "return" not in answer:
@@ -94,29 +85,33 @@ for j in range(1):
                 answer.append(key[0])
                 if "backspace" in answer:
                     del answer[-2:]
-                answer_string = "".join(answer).upper() ## [:-1] => remove last ("return") element from list
+                answer_string = "".join(answer).upper()
                 message(message_text = answer_string, duration= 0.01)
                 answer_comparison = "".join(answer[:-1]).upper()
-            if answer_comparison == practice_stimuli_shuffled[i]:
+            if answer_comparison == practice_stimuli[i]:
                 message(message_text = correct_text, duration = 1)
                 correct = True
             else:
-                message(message_text = wrong_text, duration = 1)
+                message(message_text = "Wrong! Try again.", duration = 1)
                 correct = False
-     message(message_text = "This is the beginning of the experimental block. Press f if you think that the sequence is generated following the same rule as the practice stimuli. Press j if you don´t think so.")
-response = []
+
+##experimental block
+
+message(message_text = "This is the beginning of the experimental block. Press f if you think that the sequence is generated following the same rule as the practice stimuli. Press j if you don´t think so.")
+
 for k in test_trials:
     event.clearEvents()
     stimulus = k["stimulus"]
     message(message_text = stimulus, duration = 0.01)
     response = event.waitKeys(keyList = ["f","j"], maxWait = 6)
-    response_string = "".join(response)
-    print(k["corresp"])
-    print(response_string)
-    ##if loop doesn´t really work, i think
-    if response_string == k["corresp"]:
+    if response == None:
+        response = "t"
+    if response[0] == k["corresp"]:
         message(message_text = correct_text, duration = 1)
         k["accuracy"] = "correct"
+    elif response[0] == "t":
+        message(message_text = "too slow", duration = 1)
+        k["accuracy"] = "too slow"
     else:
         message(message_text = wrong_text, duration = 1)
         k["accuracy"] = "wrong"
